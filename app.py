@@ -2,13 +2,13 @@ import streamlit as st
 import cv2
 from PIL import Image
 import torch
-
+from ultralytics import YOLO
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
 import numpy as np
 device = 'cpu'
-if not hasattr(st, 'obb'):
-    st.model = torch.hub.load('ultralytics', 'custom', path="best.pt", _verbose=False)
+model_path = "best.pt"  # 替换为你的模型路径
+model = YOLO(model_path)
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
