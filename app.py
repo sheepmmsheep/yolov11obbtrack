@@ -1,6 +1,9 @@
 import streamlit as st
 import cv2
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
+from PIL import Image
+import torch
+
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
 import numpy as np
 device = 'cpu'
