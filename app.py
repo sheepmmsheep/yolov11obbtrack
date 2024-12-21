@@ -6,7 +6,7 @@ import tempfile
 import numpy as np
 
 # 加載 YOLO 模型
-model_path = "C:\\Users\\user\\Downloads\\runs\\obb\\train43\\weights\\best.pt"
+model_path = "best.pt"
 model = YOLO(model_path)
 
 # Streamlit 頁面標題
