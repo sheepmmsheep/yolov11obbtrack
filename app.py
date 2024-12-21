@@ -25,7 +25,7 @@ def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
     img = frame.to_ndarray(format="bgr24")
 
     # YOLO 模型推理
-    results = model.predict(source=img, conf=conf_threshold, iou=iou_threshold, agnostic_nms=True)
+    results = model.track(source=img, conf=conf_threshold, iou=iou_threshold, agnostic_nms=True)
 
     # 繪製檢測框
     annotated_img = results[0].plot()
