@@ -8,7 +8,7 @@ import av
 import numpy as np
 device = 'cpu'
 if not hasattr(st, 'obb'):
-    st.model = torch.hub.load('ultralytics/yolov11', 'custom', path="best.pt", _verbose=False)
+    st.model = torch.hub.load('ultralytics', 'custom', path="best.pt", _verbose=False)
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
