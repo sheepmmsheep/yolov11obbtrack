@@ -3,4 +3,5 @@ pydub==0.25.1
 streamlit_webrtc~=0.47.7
 twilio~=8.10.1
 matplotlib
-ultralytics
+git+https://github.com/ultralytics/ultralytics.git
+
