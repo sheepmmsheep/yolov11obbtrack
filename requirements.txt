@@ -7,7 +7,6 @@ git+https://github.com/ultralytics/ultralytics.git
 torch==2.0.1
 torchvision==0.15.2
 torchaudio==2.0.2
-ultralytics==8.0.40
 streamlit
 Pillow
 numpy
