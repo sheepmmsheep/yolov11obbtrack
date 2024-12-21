@@ -10,7 +10,7 @@ model_path = "best.pt"
 model = YOLO(model_path)
 
 # Streamlit 頁面標題
-st.title("YOLO 實時追蹤 with Streamlit-WebRTC")
+st.title("YOLO 實時追蹤 with Streamlit-WebRTC and Tracking")
 st.sidebar.title("操作選項")
 
 # 信心閾值 (Confidence Threshold)
@@ -24,10 +24,10 @@ def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
     # 轉換影像為 OpenCV 格式
     img = frame.to_ndarray(format="bgr24")
 
-    # YOLO 模型推理
-    results = model.track(source=img, conf=conf_threshold, iou=iou_threshold, agnostic_nms=True)
+    # 使用 YOLO 的 track 功能進行追蹤
+    results = model.track(source=img, conf=conf_threshold, iou=iou_threshold, persist=True)
 
-    # 繪製檢測框
+    # 繪製檢測框和追蹤ID
     annotated_img = results[0].plot()
 
     # 返回帶有檢測框的影像
