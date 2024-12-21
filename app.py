@@ -1,8 +1,8 @@
 import streamlit as st
 import cv2
 from ultralytics import YOLO
-from PIL import Image
-import tempfile
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
+import av
 import numpy as np
 
 # 加載 YOLO 模型
@@ -10,49 +10,41 @@ model_path = "best.pt"
 model = YOLO(model_path)
 
 # Streamlit 頁面標題
-st.title("YOLO 實時追蹤")
+st.title("YOLO 實時追蹤 with Streamlit-WebRTC")
 st.sidebar.title("操作選項")
-st.sidebar.write("選擇以下選項開始追蹤：")
 
-# 設定攝像頭參數
-device_index = st.sidebar.number_input("選擇攝像頭索引 (默認為 0)", min_value=0, step=1, value=0)
+# 信心閾值 (Confidence Threshold)
+conf_threshold = st.sidebar.slider("設定信心閾值", min_value=0.0, max_value=1.0, value=0.35, step=0.05)
+# IOU 閾值
+iou_threshold = st.sidebar.slider("設定IOU閾值", min_value=0.0, max_value=1.0, value=0.3, step=0.05)
 
-# 啟動攝像頭按鈕
-start_tracking = st.sidebar.button("啟動追蹤")
-stop_tracking = st.sidebar.button("停止追蹤")
+# 定義影像處理回調函數
+def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+    """處理攝像頭的每一幀影像"""
+    # 轉換影像為 OpenCV 格式
+    img = frame.to_ndarray(format="bgr24")
 
-# 創建一個函數進行攝影機推理
-def webcam_tracking():
-    # 打開攝像頭
-    cap = cv2.VideoCapture(device_index)
-    if not cap.isOpened():
-        st.error("無法打開攝影鏡頭，請檢查設備！")
-        return
+    # YOLO 模型推理
+    results = model.predict(source=img, conf=conf_threshold, iou=iou_threshold, agnostic_nms=True)
 
-    # 實時處理攝像頭影像
-    stframe = st.empty()  # 建立一個空框架用於顯示
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            st.warning("無法捕獲影像，請重試！")
-            break
+    # 繪製檢測框
+    annotated_img = results[0].plot()
 
-        # YOLO 模型進行推理
-        results = model.predict(source=frame, conf=0.35, iou=0.3, agnostic_nms=True)
+    # 返回帶有檢測框的影像
+    return av.VideoFrame.from_ndarray(annotated_img, format="bgr24")
 
-        # 獲取檢測結果影像
-        annotated_frame = results[0].plot()  # 繪製檢測框
+# 啟動 WebRTC
+webrtc_ctx = webrtc_streamer(
+    key="yolo-tracking",  # 唯一標識符
+    mode=WebRtcMode.SENDRECV,  # 雙向模式（接收視頻並處理後返回）
+    video_frame_callback=video_frame_callback,  # 處理回調
+    media_stream_constraints={"video": True, "audio": False},  # 啟用視頻輸入，禁用音頻
+    async_processing=True,  # 啟用非同步處理
+)
 
-        # 使用 Streamlit 實時顯示
-        stframe.image(annotated_frame, channels="BGR", use_column_width=True)
-
-    # 釋放攝像頭資源
-    cap.release()
-
-# 啟動或停止實時追蹤
-if start_tracking:
-    st.info("正在啟動追蹤...")
-    webcam_tracking()
-
-if stop_tracking:
-    st.warning("追蹤已停止！")
+# 如果 WebRTC 正在播放，顯示提示
+if webrtc_ctx.state.playing:
+    st.markdown("### 正在實時追蹤中... 🔍")
+    st.markdown("**請確保攝影鏡頭已啟用並正對場景**。")
+else:
+    st.markdown("### 點擊上方按鈕啟動實時追蹤！")
