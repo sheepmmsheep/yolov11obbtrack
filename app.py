@@ -5,31 +5,53 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 import av
 import numpy as np
 
-model_path = "best.pt"  
-model = YOLO(model_path)
+st.title("YOLO Real-Time Tracking with YOLO.track")
+st.sidebar.title("Options")
 
-st.title("YOLO 實時追蹤 with YOLO.track")
-st.sidebar.title("操作選項")
+# Load YOLO Model
+model_path = "best.pt"  # Update with the actual model path
+try:
+    model = YOLO(model_path)
+    st.sidebar.success("Model loaded successfully!")
+except Exception as e:
+    st.sidebar.error(f"Error loading model: {e}")
 
-conf_threshold = st.sidebar.slider("設置信心閥值", min_value=0.0, max_value=1.0, value=0.35, step=0.05)
-iou_threshold = st.sidebar.slider("設置IOU閥值", min_value=0.0, max_value=1.0, value=0.3, step=0.05)
+# Sidebar Controls
+conf_threshold = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.35, 0.05)
+iou_threshold = st.sidebar.slider("IoU Threshold", 0.0, 1.0, 0.3, 0.05)
 
+# Video Frame Callback
 def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
-    img = frame.to_ndarray(format="bgr24")  # 转换为 OpenCV 格式
-    results = model.track(source=img, conf=conf_threshold, iou=iou_threshold, persist=True)
-    annotated_img = results[0].plot()
+    img = frame.to_ndarray(format="bgr24")  # Convert frame to OpenCV format
+    
+    # Optionally resize for faster processing
+    img_resized = cv2.resize(img, (640, 480))
+    
+    # Perform tracking
+    try:
+        results = model.track(source=img_resized, conf=conf_threshold, iou=iou_threshold, persist=True)
+        if len(results) > 0:
+            annotated_img = results[0].plot()
+        else:
+            annotated_img = img_resized
+    except Exception as e:
+        st.error(f"Error during tracking: {e}")
+        annotated_img = img_resized
+    
     return av.VideoFrame.from_ndarray(annotated_img, format="bgr24")
 
+# WebRTC Streamer
 webrtc_ctx = webrtc_streamer(
-    key="yolo-tracking",  
-    mode=WebRtcMode.SENDRECV,  
-    video_frame_callback=video_frame_callback,  
-    media_stream_constraints={"video": True, "audio": False},  
-    async_processing=True, 
+    key="yolo-tracking",
+    mode=WebRtcMode.SENDRECV,
+    video_frame_callback=video_frame_callback,
+    media_stream_constraints={"video": True, "audio": False},
+    async_processing=True,
 )
 
+# User Instructions
 if webrtc_ctx.state.playing:
-    st.markdown("### 正在实时追踪中... 🔍")
-    st.markdown("**请确保摄像头已启用并正对场景。**")
+    st.markdown("### Real-Time Tracking in Progress... 🔍")
+    st.markdown("**Ensure the webcam is enabled and positioned correctly.**")
 else:
-    st.markdown("### 点击上方按钮启动实时追踪！")
+    st.markdown("### Click the button above to start real-time tracking!")
